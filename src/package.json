@@ -1,0 +1,12 @@
+{
+  "title": "Material demo",
+  "description": "",
+  "dependencies": {
+    "@material-ui/core": "latest",
+    "react": "latest",
+    "react-dom": "latest",
+    "starwars-names": "1.6.0"
+  },
+  "keywords": [],
+  "name": "material-ui-multi-select-checkbox-dropdown-from-button"
+}

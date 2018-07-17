@@ -1,0 +1,22 @@
+{
+  "title": "Material demo",
+  "description": null,
+  "dependencies": {
+    "@material-ui/core": "latest",
+    "react": "latest",
+    "react-dom": "latest",
+    "starwars-names": "1.6.0"
+  },
+  "keywords": [],
+  "name": "material-ui-multi-select-checkbox-dropdown-from-button",
+  "version": "0.0.39",
+  "devDependencies": {
+    "react-scripts": "1.0.0"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test --env=jsdom",
+    "eject": "react-scripts eject"
+  }
+}
