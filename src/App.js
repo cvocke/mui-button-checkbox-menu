@@ -1,8 +1,22 @@
 import React, { Component } from "react";
-import ButtonCheckboxMenu from "./ButtonCheckboxMenu";
+import CheckboxMenu from "./CheckboxMenu";
+import withStyles from "@material-ui/core/styles/withStyles";
 import FormControlLabel from "@material-ui/core/FormControlLabel";
 import Switch from "@material-ui/core/Switch";
 import names from "starwars-names";
+
+const styles = {
+  divButton: {
+    padding: 20,
+    background: "skyblue",
+    borderRadius: 30,
+    fontFamily: "courier",
+    "&:hover": {
+      cursor: "pointer",
+      background: "grey"
+    }
+  }
+};
 
 class App extends Component {
   state = {
@@ -13,14 +27,28 @@ class App extends Component {
   };
 
   selectRandom = options =>
-    options.filter((option, index) => Math.random() > 0.6);
+    options.filter((option, index) => Math.random() > Math.random());
 
   componentDidMount() {
-    const teamSize = Math.floor(Math.random() * 16) + 5;
-    const teamMates = names.random(teamSize);
-    const selected = this.selectRandom(teamMates);
+    const objectMode = true;
+    const teamSize = Math.floor(Math.random() * 56) + 5;
+    let teamMates = names.random(teamSize);
+    if (objectMode) {
+      teamMates = teamMates.map(teamMate => {
+        return {
+          text: teamMate,
+          value: teamMate.replace(/[^a-z0-9]/gi, "").toLowerCase()
+        };
+      });
+    }
+    let selected = this.selectRandom(teamMates);
+    if (objectMode) {
+      selected = selected.map(item => item.value);
+    }
     this.setState({ teamMates, selected });
   }
+
+  handleToggle = value => this.setState({ open: value });
 
   handleChange = value => {
     this.setState({ selected: value });
@@ -33,27 +61,51 @@ class App extends Component {
   render() {
     return (
       <div>
-        <div style={{ height: 100, overflow: "hidden" }}>
-          Selection value: {JSON.stringify(this.state.selected)}
+        <div style={{ height: 200 }}>
+          <div>
+            <FormControlLabel
+              control={<Switch />}
+              label="Dense mode"
+              onChange={this.toggleDense}
+            />
+          </div>
+          <div style={{ display: "flex" }}>
+            <div style={{ width: "30%" }}>
+              <CheckboxMenu
+                options={this.state.teamMates}
+                selected={this.state.selected}
+                onChange={this.handleChange}
+                dense={this.state.dense}
+                // disablePortal
+                open={this.state.open}
+                onToggle={this.handleToggle}
+              >
+                <div className={this.props.classes.divButton}>custom</div>
+              </CheckboxMenu>
+            </div>
+            <div>
+              <CheckboxMenu
+                options={this.state.teamMates}
+                onChange={this.handleChange}
+                dense={this.state.dense}
+                disablePortal
+                defaultLabel="DEFAULT"
+              />
+            </div>
+          </div>
         </div>
-        <div>Dense mode: {JSON.stringify(this.state.dense)}</div>
-        <FormControlLabel
-          control={<Switch />}
-          label="Dense mode"
-          onChange={this.toggleDense}
-        />
-        <ButtonCheckboxMenu
-          options={this.state.teamMates}
-          selected={this.state.selected}
-          onChange={this.handleChange}
-          dense={this.state.dense}
-          disablePortal
-          open={this.state.open}
-          onToggle={value => this.setState({ open: value })}
-        />
+        <div>
+          <div>{`#teamMates: ${this.state.teamMates.length}. #selected ${
+            this.state.selected.length
+            }`}</div>
+          <div style={{ height: 100, overflow: "hidden" }}>
+            Selection value: {JSON.stringify(this.state.selected, null, 4)}
+          </div>
+          <div>Dense mode: {JSON.stringify(this.state.dense)}</div>
+        </div>
       </div>
     );
   }
 }
 
-export default App;
+export default withStyles(styles)(App);

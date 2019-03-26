@@ -1,27 +1,71 @@
 import React from "react";
-import FormControl from "@material-ui/core/FormControl";
+import PropTypes from "prop-types";
+import classNames from "classnames";
+import withStyles from "@material-ui/core/styles/withStyles";
+import Button from "@material-ui/core/Button";
 import Checkbox from "@material-ui/core/Checkbox";
+import ClickAwayListener from "@material-ui/core/ClickAwayListener";
+import FormControl from "@material-ui/core/FormControl";
+import Grow from "@material-ui/core/Grow";
 import ListItemText from "@material-ui/core/ListItemText";
 import MenuList from "@material-ui/core/MenuList";
 import MenuItem from "@material-ui/core/MenuItem";
-import Button from "@material-ui/core/Button";
-import Popper from "@material-ui/core/Popper";
-import Grow from "@material-ui/core/Grow";
 import Paper from "@material-ui/core/Paper";
-import ClickAwayListener from "@material-ui/core/ClickAwayListener";
+import Popper from "@material-ui/core/Popper";
 
-/** TO DO
- * - Add Select all/none button to footer for dropdown
- * - Add support for Array OR Collection of Objects
- * - Add single select option
- */
+const styles = {
+  paper: {
+    marginTop: 5,
+    overflow: "auto",
+    zIndex: 1000
+  },
+  menuList: {
+    overflow: "auto",
+    marginBottom: 36
+  },
+  menuListDense: {
+    marginBottom: 24
+  },
+  allOrNone: {
+    width: "50%",
+    fontSize: "1rem",
+    borderRadius: 0,
+    padding: "8px 16px",
+    minHeight: "36px"
+  },
+  allOrNoneDense: {
+    fontSize: "0.8rem",
+    padding: 0,
+    minHeight: "24px"
+  },
+  allOrNoneDivider: {
+    backgroundColor: "#e0e0e0",
+    width: "1px",
+    position: "absolute",
+    height: "100%"
+  },
+  allOrNoneWrapper: {
+    position: "absolute",
+    bottom: 0,
+    width: "100%",
+    background: "white",
+    borderTop: "1px solid #e0e0e0"
+  },
+  menuItemDense: { padding: "0 2px 0 16px" },
+  checkboxDense: { width: 12 }
+};
 
-class ButtonCheckboxMenu extends React.Component {
+class CheckboxMenu extends React.Component {
   static defaultProps = {
-    onToggle: () => {},
-    onChange: () => {},
+    onToggle: () => { },
+    onChange: () => { },
+    checkboxColor: "secondary",
     disablePortal: false,
-    placement: "bottom-start"
+    maxHeight: 324,
+    placement: "bottom-start",
+    defaultLabel: "Choose",
+    allText: "All",
+    noneText: "None"
   };
 
   state = {
@@ -46,11 +90,17 @@ class ButtonCheckboxMenu extends React.Component {
     }
   };
 
-  // onClickAway handler for ClickAwayListener.
-  // Only update internal state if open is not controlled
-  // Skip clicks of the button (anchorEl). toggle() will handle those
+  /** onClickAway handler for ClickAwayListener.
+   * - Only update internal state if open is not controlled
+   * - Skip clicks of the button (anchorEl). toggle() will handle those
+   * - Skip clicks of the select all/none div at bottom of dropdown
+   * - Only update internal state if open is not controlled
+   */
   close = event => {
-    if (this.anchorEl.contains(event.target)) {
+    if (
+      this.anchorEl.contains(event.target) ||
+      this.selectAllOrNone.contains(event.target)
+    ) {
       return;
     }
     if (this.isOpenControlled) {
@@ -60,11 +110,26 @@ class ButtonCheckboxMenu extends React.Component {
     }
   };
 
-  // onClick handler for menu options. Only update internal state if selected is not controlled
-  handleSelect = event => {
+  // onClick handler for menu options
+  // Only update internal state if selected is not controlled
+  handleSelect = (event, allOrNone) => {
     const newSelection = event.currentTarget.getAttribute("value");
 
     const updateSelection = currentSelection => {
+      if (allOrNone !== undefined) {
+        if (allOrNone === "none") {
+          return [];
+        } else {
+          return [
+            ...new Set(
+              this.props.options.map(option => {
+                return typeof option === "object" ? option.value : option;
+              })
+            )
+          ];
+        }
+      }
+
       let update = [...currentSelection];
       const newSelectionIndex = update.indexOf(newSelection);
       newSelectionIndex < 0
@@ -87,25 +152,53 @@ class ButtonCheckboxMenu extends React.Component {
   };
 
   render() {
+    const {
+      open,
+      options,
+      selected,
+      classes,
+      style,
+      children,
+      dense,
+      defaultLabel,
+      placement,
+      disablePortal,
+      maxHeight,
+      checkboxColor,
+      allText,
+      noneText
+    } = this.props;
+
     return (
-      <div>
+      <div style={style}>
         <FormControl>
-          <Button
-            id="test"
-            onClick={this.toggle}
-            variant="raised"
-            buttonRef={node => {
-              this.anchorEl = node;
-            }}
-          >
-            Choose
-          </Button>
+          {children ? (
+            <div
+              ref={node => {
+                this.anchorEl = node;
+              }}
+            >
+              {React.cloneElement(children, {
+                onClick: this.toggle
+              })}
+            </div>
+          ) : (
+              <Button
+                onClick={this.toggle}
+                variant="raised"
+                buttonRef={node => {
+                  this.anchorEl = node;
+                }}
+              >
+                {defaultLabel}
+              </Button>
+            )}
           <Popper
-            open={this.isOpenControlled ? this.props.open : this.state.open}
+            open={this.isOpenControlled ? open : this.state.open}
             anchorEl={this.anchorEl}
-            placement={this.props.placement}
+            placement={placement}
             transition
-            disablePortal={this.props.disablePortal}
+            disablePortal={disablePortal}
           >
             {({ TransitionProps, placement }) => (
               <Grow
@@ -116,44 +209,81 @@ class ButtonCheckboxMenu extends React.Component {
               >
                 <Paper
                   style={{
-                    marginTop: this.props.disablePortal ? 40 : 5,
-                    maxHeight: this.props.maxHeight
-                      ? this.props.maxHeight
-                      : 300,
-                    overflow: "auto",
-                    zIndex: 1000
+                    // marginTop: disablePortal
+                    //   ? this.anchorEl.clientHeight + 5
+                    //   : 5,
+                    maxHeight: maxHeight
                   }}
+                  className={classes.paper}
                 >
                   <ClickAwayListener onClickAway={this.close}>
-                    <MenuList dense={this.props.dense}>
-                      {this.props.options.map((name, index) => (
-                        <MenuItem
-                          key={name + index}
-                          value={name}
-                          onClick={this.handleSelect}
-                          style={
-                            this.props.dense ? { padding: "0 2px 0 16px" } : {}
-                          }
-                        >
-                          <Checkbox
-                            color={
-                              this.props.checkboxColor
-                                ? this.props.checkboxColor
-                                : "secondary"
-                            }
-                            checked={
-                              this.isSelectedControlled
-                                ? this.props.selected.indexOf(name.toString()) >
-                                  -1
-                                : this.state.selected.indexOf(name.toString()) >
-                                  -1
-                            }
-                            style={this.props.dense ? { width: 12 } : {}}
-                          />
-                          <ListItemText primary={name} />
-                        </MenuItem>
-                      ))}
-                    </MenuList>
+                    <div
+                      style={{
+                        maxHeight: maxHeight - (dense ? 24 : 36)
+                      }}
+                      className={classNames(classes.menuList, {
+                        [classes.menuListDense]: dense
+                      })}
+                    >
+                      <MenuList dense={dense} disablePadding>
+                        {options.map((name, index) => (
+                          <MenuItem
+                            key={name + index}
+                            value={typeof name === "object" ? name.value : name}
+                            onClick={this.handleSelect}
+                            className={dense && classes.menuItemDense}
+                          >
+                            <Checkbox
+                              color={checkboxColor}
+                              checked={
+                                this.isSelectedControlled
+                                  ? selected.indexOf(
+                                    typeof name === "object"
+                                      ? name.value.toString()
+                                      : name.toString()
+                                  ) > -1
+                                  : this.state.selected.indexOf(
+                                    typeof name === "object"
+                                      ? name.value.toString()
+                                      : name.toString()
+                                  ) > -1
+                              }
+                              className={dense && classes.checkboxDense}
+                            />
+                            <ListItemText
+                              primary={
+                                typeof name === "object" ? name.text : name
+                              }
+                            />
+                          </MenuItem>
+                        ))}
+                      </MenuList>
+                    </div>
+                    <div
+                      className={classes.allOrNoneWrapper}
+                      ref={node => {
+                        this.selectAllOrNone = node;
+                      }}
+                    >
+                      <Button
+                        className={classNames(classes.allOrNone, {
+                          [classes.allOrNoneDense]: dense
+                        })}
+                        batchselect={"all"}
+                        onClick={e => this.handleSelect(e, "all")}
+                      >
+                        {allText}
+                      </Button>
+                      <span className={classes.allOrNoneDivider} />
+                      <Button
+                        className={classNames(classes.allOrNone, {
+                          [classes.allOrNoneDense]: dense
+                        })}
+                        onClick={e => this.handleSelect(e, "none")}
+                      >
+                        {noneText}
+                      </Button>
+                    </div>
                   </ClickAwayListener>
                 </Paper>
               </Grow>
@@ -165,4 +295,27 @@ class ButtonCheckboxMenu extends React.Component {
   }
 }
 
-export default ButtonCheckboxMenu;
+CheckboxMenu.propTypes = {
+  open: PropTypes.bool,
+  options: PropTypes.arrayOf(
+    PropTypes.oneOfType([PropTypes.string, PropTypes.number, PropTypes.object])
+  ).isRequired,
+  selected: PropTypes.arrayOf(
+    PropTypes.oneOfType([PropTypes.string, PropTypes.number, PropTypes.object])
+  ),
+  onToggle: PropTypes.func,
+  onChange: PropTypes.func,
+  classes: PropTypes.object,
+  style: PropTypes.object,
+  children: PropTypes.object,
+  dense: PropTypes.bool,
+  defaultLabel: PropTypes.string,
+  placement: PropTypes.string,
+  disablePortal: PropTypes.bool,
+  maxHeight: PropTypes.number,
+  checkboxColor: PropTypes.string,
+  allText: PropTypes.string,
+  noneText: PropTypes.string
+};
+
+export default withStyles(styles)(CheckboxMenu);
